@@ -1,0 +1,2 @@
+# Empty fixture to ensure the up_bank_accounts table is truncated during tests.
+# Tests create UpBankAccount records explicitly in setup.

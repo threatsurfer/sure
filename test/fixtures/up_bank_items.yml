@@ -1,0 +1,2 @@
+# Empty fixture to ensure the up_bank_items table is truncated during tests.
+# Tests create UpBankItem records explicitly in setup.
