@@ -13,6 +13,8 @@ class UpBankItem < ApplicationRecord
   end
 
   belongs_to :family
+  has_many :up_bank_accounts, dependent: :destroy
+  has_many :accounts, through: :up_bank_accounts
 
   validates :name, presence: true
   validates :access_token, presence: true, on: :create
