@@ -449,6 +449,13 @@ en:
         setup_token_label: "Setup Token"
         setup_token_placeholder: "Paste SimpleFIN setup token"
         save_and_connect: "Save and connect"
+      up_bank_panel:
+        setup_token_label: "Personal Access Token"
+        setup_token_placeholder: "Paste your Up personal access token"
+        save_and_connect: "Save and connect"
+        sync: "Sync"
+        disconnect: "Disconnect"
+        confirm_disconnect: "Are you sure you want to disconnect Up Bank? Your synced accounts will become manual accounts."
       plaid_panel:
         step_1_html: "Open the %{link} and copy your Client ID and Secret Key."
         step_2: "Pick an environment. Use sandbox for testing and production for real accounts."
