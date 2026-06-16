@@ -15,7 +15,8 @@ class Provider
       indexa_capital: { region: "ES",      kind: "Investment", maturity: :alpha,  logo_text: "IC", logo_bg: "bg-red-600" },
       sophtron:       { region: "US",      kind: "Bank",       maturity: :alpha,  logo_text: "SO", logo_bg: "bg-teal-600" },
       plaid:          { region: "US",      kind: "Bank",       tier: "Paid", maturity: :stable, logo_text: "PL", logo_bg: "bg-indigo-600" },
-      plaid_eu:       { name: "Plaid EU", region: "EU",        kind: "Bank",       tier: "Paid", maturity: :stable, logo_text: "PL", logo_bg: "bg-indigo-600" }
+      plaid_eu:       { name: "Plaid EU", region: "EU",        kind: "Bank",       tier: "Paid", maturity: :stable, logo_text: "PL", logo_bg: "bg-indigo-600" },
+      up_bank:        { region: "AU",      kind: "Bank",       maturity: :beta,   logo_text: "UP", logo_bg: "bg-green-600" }
     }.freeze
 
     def self.for(provider_key)

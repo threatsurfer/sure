@@ -1,0 +1,40 @@
+<div class="space-y-4">
+  <% if @up_bank_items.present? %>
+    <% @up_bank_items.each do |item| %>
+      <div class="flex items-center justify-between p-4 border border-alpha-black-100 rounded-lg">
+        <div>
+          <p class="font-medium"><%= item.name %></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <%= button_to t(".sync"), sync_provider_settings_providers_path(provider_key: "up_bank"),
+                        method: :post,
+                        class: "btn btn-secondary btn-sm" %>
+          <%= button_to t(".disconnect"), up_bank_item_path(item),
+                        method: :delete,
+                        data: { turbo_confirm: t(".confirm_disconnect") },
+                        class: "btn btn-ghost btn-sm text-red-600" %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <% if defined?(@error_message) && @error_message.present? %>
+      <%= render DS::Alert.new(message: @error_message, variant: :error) %>
+    <% end %>
+
+    <%= styled_form_with model: UpBankItem.new,
+                         url: up_bank_items_path,
+                         scope: :up_bank_item,
+                         method: :post,
+                         data: { turbo: true },
+                         class: "space-y-3" do |form| %>
+      <%= form.text_field :setup_token,
+                          label: t(".setup_token_label"),
+                          placeholder: t(".setup_token_placeholder"),
+                          type: :password %>
+
+      <div class="flex justify-end">
+        <%= form.submit t(".save_and_connect") %>
+      </div>
+    <% end %>
+  <% end %>
+</div>
