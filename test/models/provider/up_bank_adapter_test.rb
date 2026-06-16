@@ -29,9 +29,8 @@ class Provider::UpBankAdapterTest < ActiveSupport::TestCase
 
   # Run shared interface tests
   test_provider_adapter_interface
-  # Note: test_syncable_interface is omitted because sync_up_bank_item_path route
-  # does not yet exist (routing task pending). The item/syncing?/status/requires_update?
-  # methods are verified in the provider-specific tests below.
+  # Route now exists — enable the syncable interface check
+  test_syncable_interface
   test_institution_metadata_interface
 
   # Provider-specific tests

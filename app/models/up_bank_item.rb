@@ -26,4 +26,9 @@ class UpBankItem < ApplicationRecord
   def import_latest_up_bank_data(sync_start_date: nil)
     UpBankItem::Importer.new(self, up_bank_provider:, sync_start_date:).import
   end
+
+  def destroy_later
+    update!(scheduled_for_deletion: true)
+    DestroyJob.perform_later(self)
+  end
 end

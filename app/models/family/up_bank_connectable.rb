@@ -6,20 +6,21 @@ module Family::UpBankConnectable
   end
 
   def can_connect_up_bank?
-    true # Up Bank doesn't have regional restrictions like Plaid
+    true # Up Bank does not have regional restrictions like Plaid
   end
 
+  # Connects a new Up Bank item using a Personal Access Token (PAT).
+  # Up Bank has NO claim-URL exchange — the PAT is the credential.
+  # Validates the token via a live ping; raises UpBankConnectionError on failure.
+  # Does NOT call sync_later — the controller owns that responsibility.
   def create_up_bank_item!(setup_token:, item_name: nil)
-    up_bank_provider = Provider::UpBankAdapter.new
-    access_url = up_bank_provider.claim_access_url(setup_token)
+    unless Provider::UpBank.new(setup_token).ping
+      raise Provider::UpBank::UpBankError, "Invalid Up Bank token — authentication failed"
+    end
 
-    up_bank_item = up_bank_items.create!(
-      name: item_name || "Up Bank Connection",
-      access_url: access_url
+    up_bank_items.create!(
+      name: item_name.presence || "Up Bank",
+      access_token: setup_token
     )
-
-    up_bank_item.sync_later
-
-    up_bank_item
   end
 end

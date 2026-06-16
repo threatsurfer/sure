@@ -588,6 +588,17 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :up_bank_items, only: %i[index new create show destroy] do
+    collection do
+      get :select_existing_account
+    end
+
+    member do
+      post :sync
+    end
+  end
+
+
   resources :lunchflow_items, only: %i[index new create show edit update destroy] do
     collection do
       get :preload_accounts
