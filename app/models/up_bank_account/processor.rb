@@ -4,7 +4,8 @@ class UpBankAccount::Processor
     @uba = up_bank_account
   end
 
-  # Creates/ensures the SURE Account, updates balance, and imports all SETTLED transactions.
+  # Creates/ensures the SURE Account, updates balance, and imports SETTLED transactions.
+  # HELD (pending) transactions are always skipped — see include_pending?.
   # Safe to call multiple times — idempotent via find_or_initialize_by in ProviderImportAdapter.
   def process
     account = ensure_account!
@@ -28,18 +29,19 @@ class UpBankAccount::Processor
     Array(@uba.raw_transactions_payload).each do |tx|
       a = tx["attributes"] || {}
 
-      # Skip HELD (pending) transactions unless the family setting enables pending imports.
-      # Up Bank's sign convention already matches SURE (negative = outflow) so no negation.
+      # Skip HELD (pending) transactions — include_pending? returns false for Up Bank
+      # because "up_bank" is not yet wired into Transaction::PENDING_PROVIDERS, so
+      # importing HELD would store them as posted entries (wrong).
       next if a["status"] == "HELD" && !include_pending?
 
       transfer_account_id = tx.dig("relationships", "transferAccount", "data", "id")
 
       adapter.import_transaction(
-        external_id: "up_bank_#{tx['id']}",
+        external_id: "up_bank_#{tx["id"]}",
         source:      "up_bank",
-        amount:      (a.dig("amount", "valueInBaseUnits").to_d / 100),
+        amount:      -(a.dig("amount", "valueInBaseUnits").to_d / 100),
         currency:    a.dig("amount", "currencyCode") || @uba.currency || "AUD",
-        date:        (a["settledAt"] || a["createdAt"]),
+        date:        Simplefin::DateUtils.parse_provider_date(a["settledAt"] || a["createdAt"]),
         name:        a["description"],
         notes:       a["message"].presence,
         extra:       {
@@ -55,9 +57,11 @@ class UpBankAccount::Processor
   private
 
     # Whether to import HELD (pending) transactions.
-    # Reads the family-level setting if available; defaults to false (skip HELD).
+    # Up Bank is not yet listed in Transaction::PENDING_PROVIDERS, so we always return
+    # false — importing HELD would create fully-posted entries with wrong state.
     def include_pending?
-      return Setting.syncs_include_pending if Setting.respond_to?(:syncs_include_pending)
+      # Up: skip HELD (pending) transactions. "up_bank" is not yet wired into
+      # Transaction::PENDING_PROVIDERS, so importing HELD would store them as posted.
       false
     end
 

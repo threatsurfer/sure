@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_16_100200) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_16_100300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -129,7 +129,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_16_100200) do
     t.index ["plaid_account_id"], name: "index_accounts_on_plaid_account_id"
     t.index ["simplefin_account_id"], name: "index_accounts_on_simplefin_account_id"
     t.index ["status"], name: "index_accounts_on_status"
-    t.index ["up_bank_account_id"], name: "index_accounts_on_up_bank_account_id"
+    t.index ["up_bank_account_id"], name: "idx_unique_accounts_up_bank_account_id", unique: true, where: "(up_bank_account_id IS NOT NULL)"
   end
 
   create_table "active_storage_attachments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
