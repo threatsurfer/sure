@@ -203,6 +203,34 @@ class Account < ApplicationRecord
       create_and_sync(attributes, skip_initial_sync: true)
     end
 
+    def create_from_up_bank_account(up_bank_account, account_type, subtype = nil)
+      if account_type.blank? || account_type.to_s == "unknown"
+        raise ArgumentError, "account_type is required when creating an account from Up Bank"
+      end
+
+      balance = up_bank_account.current_balance || 0
+
+      if account_type == "CreditCard" || account_type == "Loan"
+        balance = balance.abs
+      end
+
+      cash_balance = balance
+      family = up_bank_account.up_bank_item.family
+
+      attributes = {
+        family: family,
+        name: up_bank_account.name,
+        balance: balance,
+        cash_balance: cash_balance,
+        currency: up_bank_account.currency || "AUD",
+        accountable_type: account_type,
+        accountable_attributes: subtype.present? ? { subtype: subtype } : {},
+        up_bank_account_id: up_bank_account.id
+      }
+
+      create_and_sync(attributes, skip_initial_sync: true)
+    end
+
     def create_from_enable_banking_account(enable_banking_account, account_type, subtype = nil)
       # Get the balance from Enable Banking
       balance = enable_banking_account.current_balance || 0
