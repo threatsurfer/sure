@@ -36,6 +36,12 @@ class UpBankAccount::Processor
 
       transfer_account_id = tx.dig("relationships", "transferAccount", "data", "id")
 
+      # Map Up Bank's own category (how the user tagged it in the Up app) to the
+      # matching SURE category, so synced transactions are categorized automatically.
+      # nil when Up has not categorized the transaction (e.g. transfers, income) —
+      # category_id: nil leaves the transaction uncategorized, mirroring the Up app.
+      category_slug = tx.dig("relationships", "category", "data", "id")
+
       adapter.import_transaction(
         external_id: "up_bank_#{tx["id"]}",
         source:      "up_bank",
@@ -44,6 +50,7 @@ class UpBankAccount::Processor
         date:        Simplefin::DateUtils.parse_provider_date(a["settledAt"] || a["createdAt"]),
         name:        a["description"],
         notes:       a["message"].presence,
+        category_id: (category_slug && category_map[category_slug]),
         extra:       {
           "up_bank" => {
             "status"              => a["status"],
@@ -63,6 +70,13 @@ class UpBankAccount::Processor
       # Up: skip HELD (pending) transactions. "up_bank" is not yet wired into
       # Transaction::PENDING_PROVIDERS, so importing HELD would store them as posted.
       false
+    end
+
+    # Maps an Up Bank category slug to the family's matching SURE category id,
+    # ensuring Up's official taxonomy exists on first use. Memoized per run so the
+    # taxonomy is resolved at most once even across many transactions.
+    def category_map
+      @category_map ||= UpBankAccount::CategoryMapper.new(@uba.up_bank_item.family).slug_to_category_id
     end
 
     # Ensures the linked SURE Account exists.
