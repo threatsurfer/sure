@@ -14,6 +14,6 @@ class DataEnrichment < ApplicationRecord
     brex: "brex",
     indexa_capital: "indexa_capital",
     sophtron: "sophtron",
-    ibkr: "ibkr"
-  }
+    ibkr: "ibkr",
+    up_bank: "up_bank"  }
 end
