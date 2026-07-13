@@ -46,12 +46,33 @@ class UpBankAccount::ProcessorTest < ActiveSupport::TestCase
     assert_nil held_entry, "HELD transaction must not be imported"
   end
 
-  test "maps Up Bank category to the matching SURE category (nested under its parent)" do
-    UpBankAccount::Processor.new(@uba).process
-    entry = @uba.account.entries.find_by(external_id: "up_bank_tx-4")
-    category = entry.transaction.category
-    assert_equal "TV, Music & Streaming", category&.name
-    assert_equal "Good Life", category.parent&.name
+  # Importing must not create categories as a side effect: a family that has none
+  # (deliberately cleared, or pre-onboarding) keeps none, and transactions stay
+  # uncategorized until the user sets up categories themselves.
+  test "does not create categories during import" do
+    family = families(:empty)
+    assert_equal 0, family.categories.count, "family starts with no categories"
+
+    uba = build_up_bank_account(family)
+    UpBankAccount::Processor.new(uba).process
+
+    assert_equal 0, family.categories.reload.count, "import must not create categories"
+
+    entry = uba.reload.account.entries.find_by(external_id: "up_bank_tx-4")
+    assert_not_nil entry, "the transaction was still imported"
+    assert_nil entry.transaction.category_id, "stays uncategorized when the family has no categories"
+  end
+
+  # With the default categories present, the same Up category resolves and is applied.
+  test "applies matched category when the family already has it" do
+    family = families(:empty)
+    family.categories.bootstrap!
+
+    uba = build_up_bank_account(family)
+    UpBankAccount::Processor.new(uba).process
+
+    entry = uba.reload.account.entries.find_by(external_id: "up_bank_tx-4")
+    assert_equal "Subscriptions", entry.transaction.category&.name
   end
 
   test "transactions without an Up Bank category are left uncategorized" do
@@ -59,4 +80,13 @@ class UpBankAccount::ProcessorTest < ActiveSupport::TestCase
     entry = @uba.account.entries.find_by(external_id: "up_bank_tx-1")
     assert_nil entry.transaction.category, "Woolworths tx has no Up category -> must stay uncategorized"
   end
+
+  private
+
+    def build_up_bank_account(family)
+      item = UpBankItem.create!(family: family, name: "Up", access_token: "t")
+      item.up_bank_accounts.create!(account_id: "acc-2", name: "Spending", currency: "AUD",
+        account_type: "TRANSACTIONAL", account_subtype: "checking", current_balance: 100,
+        raw_payload: {}, raw_transactions_payload: TXNS)
+    end
 end

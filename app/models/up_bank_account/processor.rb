@@ -38,8 +38,9 @@ class UpBankAccount::Processor
 
       # Map Up Bank's own category (how the user tagged it in the Up app) to the
       # matching SURE category, so synced transactions are categorized automatically.
-      # nil when Up has not categorized the transaction (e.g. transfers, income) —
-      # category_id: nil leaves the transaction uncategorized, mirroring the Up app.
+      # nil when Up has not categorized the transaction (e.g. transfers, income) or
+      # when no existing family category matches — category_id: nil leaves the
+      # transaction uncategorized, mirroring the Up app.
       category_slug = tx.dig("relationships", "category", "data", "id")
 
       adapter.import_transaction(
@@ -50,7 +51,7 @@ class UpBankAccount::Processor
         date:        Simplefin::DateUtils.parse_provider_date(a["settledAt"] || a["createdAt"]),
         name:        a["description"],
         notes:       a["message"].presence,
-        category_id: (category_slug && category_map[category_slug]),
+        category_id: (category_slug && category_matcher.match(category_slug)&.id),
         extra:       {
           "up_bank" => {
             "status"              => a["status"],
@@ -72,11 +73,14 @@ class UpBankAccount::Processor
       false
     end
 
-    # Maps an Up Bank category slug to the family's matching SURE category id,
-    # ensuring Up's official taxonomy exists on first use. Memoized per run so the
-    # taxonomy is resolved at most once even across many transactions.
-    def category_map
-      @category_map ||= UpBankAccount::CategoryMapper.new(@uba.up_bank_item.family).slug_to_category_id
+    # A single category matcher reused across this account's transactions, built from
+    # the family's existing categories. Importing is intentionally non-destructive with
+    # respect to the family's category structure: we do NOT create Up's taxonomy or
+    # bootstrap SURE's defaults here. A family that has no categories (deliberately
+    # cleared, or pre-onboarding) simply gets uncategorized transactions, and matching
+    # resumes once the user sets up categories through the normal UI flow.
+    def category_matcher
+      @category_matcher ||= UpBankAccount::CategoryMatcher.new(@uba.up_bank_item.family.categories.to_a)
     end
 
     # Ensures the linked SURE Account exists.
