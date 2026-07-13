@@ -2,7 +2,7 @@ require "test_helper"
 class UpBankItem::ImporterTest < ActiveSupport::TestCase
   ACCOUNTS = [
     { "id" => "acc-1", "attributes" => { "displayName" => "2Up Spending", "accountType" => "TRANSACTIONAL", "balance" => { "currencyCode" => "AUD", "valueInBaseUnits" => 262575 } } },
-    { "id" => "acc-2", "attributes" => { "displayName" => "💰 Savings",   "accountType" => "SAVER",         "balance" => { "currencyCode" => "AUD", "valueInBaseUnits" => 66 } } },
+    { "id" => "acc-2", "attributes" => { "displayName" => "💰 Savings",   "accountType" => "SAVER",         "balance" => { "currencyCode" => "AUD", "valueInBaseUnits" => 66 } } }
   ]
   TXNS = [ { "id" => "tx-1", "attributes" => { "status" => "SETTLED", "description" => "Woolworths", "amount" => { "currencyCode" => "AUD", "valueInBaseUnits" => -1740 }, "settledAt" => "2026-06-11T03:00:00+10:00" }, "relationships" => { "transferAccount" => { "data" => nil } } } ]
 

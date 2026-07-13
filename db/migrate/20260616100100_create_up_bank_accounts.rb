@@ -12,12 +12,12 @@ class CreateUpBankAccounts < ActiveRecord::Migration[7.2]
       t.jsonb   :raw_payload
       t.jsonb   :raw_transactions_payload
       t.datetime :balance_date
-      t.jsonb   :extra
+      t.jsonb :extra
       t.timestamps
     end
     add_index :up_bank_accounts, :up_bank_item_id
     add_index :up_bank_accounts, :account_id
-    add_index :up_bank_accounts, [:up_bank_item_id, :account_id],
+    add_index :up_bank_accounts, [ :up_bank_item_id, :account_id ],
               unique: true, where: "account_id IS NOT NULL",
               name: "idx_unique_uba_per_item_and_upstream"
   end
