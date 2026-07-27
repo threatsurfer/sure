@@ -30,4 +30,5 @@ jobs:
             config/locales/views/reports/
             docs/hosting/ai.md
             app/models/provider/binance.rb
+            app/models/provider/coinbase.rb
             workers/preview/package-lock.json
