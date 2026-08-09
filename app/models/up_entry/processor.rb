@@ -33,9 +33,12 @@ class UpEntry::Processor
   end
 
   # Build a processor for a single raw Up transaction tied to +up_account+.
-  def initialize(up_transaction, up_account:)
+  # +category_matcher+ is optional; without one the transaction is imported
+  # uncategorised.
+  def initialize(up_transaction, up_account:, category_matcher: nil)
     @up_transaction = up_transaction
     @up_account = up_account
+    @category_matcher = category_matcher
   end
 
   # Import the transaction into the linked Sure account via the import adapter.
@@ -53,6 +56,7 @@ class UpEntry::Processor
       date: date,
       name: name,
       source: "up",
+      category_id: matched_category&.id,
       kind: kind,
       merchant: merchant,
       notes: notes,
@@ -72,7 +76,15 @@ class UpEntry::Processor
 
   private
 
-    attr_reader :up_transaction, :up_account
+    attr_reader :up_transaction, :up_account, :category_matcher
+
+    # The family category matched from Up's category slug, or nil when there is no
+    # matcher, no slug, or no confident equivalent among the family's categories.
+    def matched_category
+      return nil if category_matcher.nil?
+
+      @matched_category ||= category_matcher.match(data[:category_id])
+    end
 
     # Memoized adapter that writes provider transactions into the Sure account.
     def import_adapter
