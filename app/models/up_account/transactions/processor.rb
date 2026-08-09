@@ -24,7 +24,8 @@ class UpAccount::Transactions::Processor
     up_account.raw_transactions_payload.each_with_index do |transaction_data, index|
       result = UpEntry::Processor.new(
         transaction_data,
-        up_account: up_account
+        up_account: up_account,
+        category_matcher: category_matcher
       ).process
 
       if result.nil?
@@ -56,6 +57,20 @@ class UpAccount::Transactions::Processor
   end
 
   private
+
+    # Memoized matcher that maps Up category slugs onto the family's existing
+    # categories. Deliberately does NOT bootstrap defaults: a family with no
+    # categories simply gets uncategorised transactions, and matching resumes once
+    # the user sets categories up through the normal UI flow.
+    def category_matcher
+      @category_matcher ||= UpAccount::Transactions::CategoryMatcher.new(family_categories)
+    end
+
+    # The family's existing categories, or an empty array when the account isn't
+    # linked yet.
+    def family_categories
+      @family_categories ||= up_account.current_account&.family&.categories || []
+    end
 
     # Extract the Up transaction id from raw data, or "unknown".
     def transaction_id(transaction_data)

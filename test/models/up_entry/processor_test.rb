@@ -151,4 +151,72 @@ class UpEntry::ProcessorTest < ActiveSupport::TestCase
     assert_equal "standard", entry.entryable.kind
     assert_nil entry.entryable.extra.dig("up", "transfer_account_id")
   end
+
+  test "applies the matched category when a category matcher is supplied" do
+    @family.categories.bootstrap!
+    matcher = UpAccount::Transactions::CategoryMatcher.new(@family.categories.to_a)
+
+    entry = UpEntry::Processor.new(
+      up_transaction_with_category("tx_categorized_1", "groceries"),
+      up_account: @up_account,
+      category_matcher: matcher
+    ).process
+
+    assert_equal "Groceries", entry.entryable.category&.name
+  end
+
+  test "imports uncategorized when no matcher is supplied" do
+    @family.categories.bootstrap!
+
+    entry = UpEntry::Processor.new(
+      up_transaction_with_category("tx_categorized_2", "groceries"),
+      up_account: @up_account
+    ).process
+
+    assert_nil entry.entryable.category
+  end
+
+  test "imports uncategorized when the slug has no confident match" do
+    @family.categories.bootstrap!
+    matcher = UpAccount::Transactions::CategoryMatcher.new(@family.categories.to_a)
+
+    entry = UpEntry::Processor.new(
+      up_transaction_with_category("tx_categorized_3", "booze"),
+      up_account: @up_account,
+      category_matcher: matcher
+    ).process
+
+    assert_nil entry.entryable.category
+  end
+
+  test "does not create categories for a family that has none" do
+    @family.categories.destroy_all
+    matcher = UpAccount::Transactions::CategoryMatcher.new(@family.categories.reload.to_a)
+
+    entry = nil
+    assert_no_difference "@family.categories.count" do
+      entry = UpEntry::Processor.new(
+        up_transaction_with_category("tx_categorized_4", "groceries"),
+        up_account: @up_account,
+        category_matcher: matcher
+      ).process
+    end
+
+    assert_nil entry.entryable.category
+  end
+
+  private
+
+    def up_transaction_with_category(id, category_id)
+      {
+        id: id,
+        account_id: "acc_123",
+        status: "SETTLED",
+        description: "Corner Store",
+        amount: { currencyCode: "AUD", value: "-25.00", valueInBaseUnits: -2500 },
+        settledAt: "2026-01-23T00:00:00+11:00",
+        createdAt: "2026-01-23T00:00:00+11:00",
+        category_id: category_id
+      }
+    end
 end
